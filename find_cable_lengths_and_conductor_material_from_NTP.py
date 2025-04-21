@@ -1,6 +1,7 @@
 
 # Find cable lengths from NTP study, based on location of buses
 # Also calculates the kg of Aluminum and Steel for each cable rating.
+# !! Note.. some nicer plots are in plot_cable_lengths.py
 
 import pandas as pd
 import geopandas as gpd
@@ -18,7 +19,7 @@ percent_added_to_compensate_for_straightline = .3  # 30% increase
 percent_added_to_compensate_for_sag = .04 # 4% increase
 total_multiplier_for_length = 1 + percent_added_to_compensate_for_straightline + percent_added_to_compensate_for_sag
 scenario_name = 'S01'
-
+use_avg = False # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
 
 
 ### Read data
@@ -68,7 +69,7 @@ def correct_coordinates(point):
 
 
 
-### If HVAC scenario 1, then add FromBus and ToBus locations to OHL_df into new columns called 
+### If HVAC scenario 1, add FromBus and ToBus locations to OHL_df into new columns called 
 # FromBusLocation and ToBusLocation
 if scenario_name == 'S01':
     # Extract last 6 digits of `node_id` in `node_locations_df`
@@ -130,12 +131,12 @@ gdf_OHL.set_crs('EPSG:4326', allow_override=True, inplace=True)
 gdf_OHL = gdf_OHL.to_crs(epsg=32614) # meters that are more focused on center US
 
 # Calculate the distance of each LineString geometry
-gdf_OHL['distance'] = gdf_OHL.geometry.length/1e3*total_multiplier_for_length # convert to km and apply length multipliers
+gdf_OHL['distance'] = gdf_OHL.geometry.length/1e3*total_multiplier_for_length # Convert meters to km and apply length multipliers
 gdf_OHL['distance'] = gdf_OHL['distance']*0.62 # convert km to miles
 # If the lengths are not provided in S01, you also don't have the coordinates of both endpoints, so use the lengths
 # provided in the S01 dataset.  This is not for very many points.
 if scenario_name == 'S01':
-    gdf_OHL['distance'] = gdf_OHL['Length[km]'].where(gdf_OHL['Length[km]'] != 0, gdf_OHL['distance'])
+    gdf_OHL['distance'] = gdf_OHL['Length[km]'].where(gdf_OHL['Length[km]'] != 0, gdf_OHL['distance'])*0.62*total_multiplier_for_length # Convert from km to miles
 
 
 
@@ -222,9 +223,9 @@ df['Distance_Bin'] = pd.cut(df['distance'], bins=bins, labels=labels, right=Fals
 # Group by 'Distance_Bin' and 'Vn [kV]', and count the occurrences
 grouped = df.groupby(['Distance_Bin', 'Vn [kV]']).size().unstack(fill_value=0)
 if scenario_name == 'S01':
-    pd.to_pickle(grouped,basepath+'HVAC_Scenario_HVAC_lines.pkl')
+    pd.to_pickle(grouped,basepath + 'HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
 if scenario_name == 'S03':
-    pd.to_pickle(grouped,basepath+'MTHVDC_Scenario_HVAC_lines.pkl')
+    pd.to_pickle(grouped,basepath+'MTHVDC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
 # Plot the stacked bar plot 
 """ # Get the colors used in the plot
 ax = grouped.plot(kind='bar', stacked=True, figsize=(10, 6), colormap='tab20')
@@ -252,7 +253,7 @@ ax.set_ylabel('Number of HVAC Lines')
 ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 #ax.set_title('HVAC: Number of Transmission Lines Grouped by Distance and Voltage')
 plt.xticks(rotation=45)
-plt.ylim([0,400])
+plt.ylim([0,550])
 plt.legend(title='Voltage [kV]', bbox_to_anchor=(1.05, 1), loc='upper left')
 plt.tight_layout()
 plt.show()
@@ -326,7 +327,7 @@ if scenario_name == 'S03':
     df['Distance_Bin'] = pd.cut(df['distance'], bins=bins, labels=labels, right=False)
     # Group by 'Distance_Bin' and 'Vn [kV]', and count the occurrences
     grouped = df.groupby(['Distance_Bin', 'Vn [kV]']).size().unstack(fill_value=0)
-    pd.to_pickle(grouped, basepath + 'MTHVDC_Scenario_HVDC_lines.pkl')
+    pd.to_pickle(grouped, basepath + 'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
     # Plot the stacked bar plot
     ax = grouped.plot(kind='bar', stacked=True, figsize=(10, 6), colormap='tab20')
     # Set the plot labels and title
@@ -377,8 +378,6 @@ if scenario_name == 'S03':
 
 
 # If 'conductor' is NaN, then take the voltage value and map it to the conductor type in the following table
-# conductor_assumptions_NTP =  [[insert black table from jarrad's email here, making sure the string is the same as in the csv from NTP]]
-# Example data
 data = {
     'Voltage [kV]': [138, 230, 230, 345, 345, 500, 500, 765],
     'Option': ['High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'High Capacity'],
@@ -425,39 +424,54 @@ bird_dict = {
     'Grosbeak': {
         'lb per 1000 ft Al': 599,
         'lb per 1000 ft Stl': 275
-    },
-    'Wolf': {
-        'lb per 1000 ft Al': 293,  
-        'lb per 1000 ft Stl': 194
     }
 }
 
 
-def get_al_and_stl_weights(conductor_str, bird_dict):
-    # Check if the conductor string contains 'Bluejay' or 'Grosbeak'
-    for bird_type in bird_dict:
-        if bird_type in conductor_str:
-            # Extract the quantity from the string, assuming format is like "4 x Grosbeak"
-            quantity = int(conductor_str.split(' x ')[0])  
-            # Get the weights per 1000 ft 
-            al_weight_per_1000ft = bird_dict[bird_type]['lb per 1000 ft Al']
-            stl_weight_per_1000ft = bird_dict[bird_type]['lb per 1000 ft Stl']
-            # Calculate total aluminum weight (convert to kg by dividing by 2.20462)
-            total_al_weight = quantity * al_weight_per_1000ft / 2.20462  # Converting lb to kg
-            total_stl_weight = quantity * stl_weight_per_1000ft / 2.20462  # Converting lb to kg
-            return total_al_weight, total_stl_weight
+# Calculate average Al and Stl across bird types
+al_values = [bird['lb per 1000 ft Al'] for bird in bird_dict.values()]
+avg_al_weight_per_1000ft = sum(al_values) / len(al_values)
+stl_values = [bird['lb per 1000 ft Stl'] for bird in bird_dict.values()]
+avg_stl_weight_per_1000ft = sum(stl_values)/ len(stl_values)
+
+
+def get_al_and_stl_weights(conductor_str, bird_dict, use_avg):
+    if use_avg==False:
+        # This means to use individual weight densities by cable type
+        # Check if the conductor string contains 'Bluejay' or 'Grosbeak'
+        for bird_type in bird_dict:
+            if bird_type in conductor_str:
+                # Extract the quantity from the string, assuming format is like "4 x Grosbeak"
+                quantity = int(conductor_str.split(' x ')[0])  
+                # Get the weights per 1000 ft 
+                al_weight_per_1000ft = bird_dict[bird_type]['lb per 1000 ft Al']
+                stl_weight_per_1000ft = bird_dict[bird_type]['lb per 1000 ft Stl']
+                # Calculate total aluminum weight (convert to kg by dividing by 2.20462)
+                total_al_weight = quantity * al_weight_per_1000ft / 2.20462  # Converting lb to kg
+                total_stl_weight = quantity * stl_weight_per_1000ft / 2.20462  # Converting lb to kg
+                return total_al_weight, total_stl_weight
+    if use_avg==True:
+        # This means to use the average cable weight density, across all types.
+        # Despite the assumptions for NTP having multiple cable types (e.g. Grosbeak, Bluejay, ...) the assumptions when applied result in only 'Bluejay' type conductors, with varying numbers of conductors per bundle (2,3,4, and 6).  The average number of lines in a bundle (unweighted) is (2+3+4+6)/4 = 3.75. Rounding up is 4 cables per bundle.  We can use this as a sensitivity if we assume all cable bundles are 4xBluejay. 
+        al_weight_per_1000ft = 1048
+        stl_weight_per_1000ft = 205
+        total_al_weight = 4 *al_weight_per_1000ft / 2.20462 # See above comment, 4 is the average number of cables per bundle.
+        total_stl_weight = 4 *stl_weight_per_1000ft / 2.20462
+        return total_al_weight, total_stl_weight
+
+
     return 0  # Return 0 if no matching bird type is found
 
 
-def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name):
+def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg):
     # Calculate the weight for aluminum and steel for each row. 5280/1000 is converting miles to 1000 ft bc weight is in kg/1000ft
     gdf['Total Al [kg]'] = gdf.apply(
-        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict)[0] * row['distance'] * 5280 / 1000, 
+        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[0] * row['distance'] * 5280 / 1000, 
         axis=1
     )
 
     gdf['Total Stl [kg]'] = gdf.apply(
-        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict)[1] * row['distance'] * 5280 / 1000,
+        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[1] * row['distance'] * 5280 / 1000,
         axis=1
     )
 
@@ -482,7 +496,7 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name):
 
     ax.set_xlabel('Voltage Level [kV]')
     ax.set_ylabel('Total Weight [kg]')
-    ax.set_title(cable_type + ' in ' + scenario_name_for_plot)
+    ax.set_title(cable_type + ' in ' + scenario_name_for_plot + ' using average cable weight = ' + str(use_avg))
 
     # Show plot
     plt.tight_layout()
@@ -492,8 +506,8 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name):
 
     # Apply the function to the 'Conductor' column and create 'Total Al [kg]'
     ### overwrite to just plot totals. Maybe should change to plot material amts for each kV.
-    gdf['Total Al [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict)[0])*gdf['distance']*3280.84/1000  # convert km to 1000s of ft (3280/1000)
-    gdf['Total Stl [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict)[1])*gdf['distance']*3280.84/1000  # convert km to 1000s of ft (3280/1000)
+    gdf['Total Al [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict, use_avg)[0])*gdf['distance']*5280/1000  # Convert miles to 1000s of ft  
+    gdf['Total Stl [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict,use_avg)[1])*gdf['distance']*5280/1000  
 
 
     # Print the sums of the Al and Stl in kg for each scenario
@@ -527,17 +541,21 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name):
 efficiency_factor = 0.9
 
 if scenario_name == 'S01':
-    plot_al_and_stl_for_each_kv_and_type('HVAC', gdf_OHL, scenario_name)
+    plot_al_and_stl_for_each_kv_and_type('HVAC', gdf_OHL, scenario_name, use_avg)
     # Calculate the conductor length in TW-miles
     gdf_OHL['TW-miles'] = gdf_OHL['distance']*gdf_OHL['Rate1[MVA]']*efficiency_factor/1e6  # conversion factors are from MW to TW 
+    # gdf_OHL['Conductor'].unique() = ['4 x Bluejay', '3 x Bluejay', '2 x Bluejay', '6 x Bluejay']
 if scenario_name == 'S03':
-    plot_al_and_stl_for_each_kv_and_type('HVAC', gdf_OHL, scenario_name)
+    plot_al_and_stl_for_each_kv_and_type('HVAC', gdf_OHL, scenario_name, use_avg)
     gdf_OHL['TW-miles'] = gdf_OHL['distance']*gdf_OHL['Rate1[MVA]']*efficiency_factor/1e6
+    # gdf_OHL['Conductor'].unique() = ['4 x Bluejay', '6 x Bluejay', '3 x Bluejay', '2 x Bluejay']
 
-    plot_al_and_stl_for_each_kv_and_type('HVDC', gdf_DC, scenario_name)
+    plot_al_and_stl_for_each_kv_and_type('HVDC', gdf_DC, scenario_name, use_avg)
     gdf_DC['TW-miles'] = gdf_DC['distance']*gdf_DC['Rate1[MVA]']*efficiency_factor/1e6  #
+    # gdf_OHL['Conductor'].unique() = ['6 x Bluejay', '3 x Bluejay', '2 x Bluejay']
 
 
+# Despite the assumptions for NTP having multiple cable types (e.g. Grosbeak, Bluejay, ...) the assumptions when applied result in only 'Bluejay' type conductors, with varying numbers of conductors per bundle (2,3,4, and 6).  The average number of lines in a bundle (unweighted) is (2+3+4+6)/4 = 3.75. Rounding up is 4 cables per bundle.  We can use this as a sensitivity if we assume all cable bundles are 4xBluejay. 
 
 
 

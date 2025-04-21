@@ -190,7 +190,7 @@ if scenario_name == 'S03':
 
     # Adjust layout and save plot as image
     plt.tight_layout()
-    plt.savefig(plotpath + 'HVDC_lines.png', bbox_inches='tight')
+    #plt.savefig(plotpath + 'HVDC_lines.png', bbox_inches='tight')
     
     # Show the plot
     plt.show()
@@ -225,7 +225,7 @@ if scenario_name == 'S03':
 
     # Adjust layout and save plot as image
     plt.tight_layout()
-    plt.savefig(plotpath + 'HVDC_converter_transformers.png', bbox_inches='tight')
+    #plt.savefig(plotpath + 'HVDC_converter_transformers.png', bbox_inches='tight')
 
     # Print total number converter transformers
     print('Total number of converter-transformers: ' + str(sum(number_converter_transformers)))

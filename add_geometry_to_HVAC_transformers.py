@@ -1,6 +1,5 @@
 
-# Find cable lengths from NTP study, based on location of buses
-# Also calculates the kg of Aluminum and Steel for each cable rating.
+# Adds locations to HVAC transformers from NTP data.
 
 import pandas as pd
 import geopandas as gpd
@@ -94,7 +93,7 @@ if scenario_name == 'S01':
 
     while not blank_geometry_rows.empty:
 
-        print('no location matched becuase not enough digits for the row id to match the location file id')
+        # print('no location matched becuase not enough digits for the row id to match the location file id')
 
         # Increase the number of digits that must match for identifiers to reduce multiple matches and run again.
         number_last_digits_to_match = number_last_digits_to_match - 1
@@ -137,11 +136,12 @@ gdf_OHL.set_crs('EPSG:4326', allow_override=True, inplace=True)
 gdf_OHL.to_csv(filenames[0] + '_HVAC_location.csv', index=False)
 
 
-## After running commented code above, combine all the dataframes into one
+
 
 '''
 
-# Can make this code better .. without commenting.. #TODO
+# Can definitely make this code better .. without commenting.. #TODO
+## After running commented code above, combine all the dataframes into one
 filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
 df_list = [pd.read_csv(f + '_HVAC_location.csv') for f in filenames]
 combined_df = pd.concat(df_list, ignore_index=True)

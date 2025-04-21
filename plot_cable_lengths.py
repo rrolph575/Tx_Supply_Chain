@@ -7,9 +7,11 @@ import matplotlib.patches as mpatches
 datapath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
 
 # read pkl files saved from find_cable_lengths*py
-hvac_data = pd.read_pickle(datapath+'HVAC_Scenario_HVAC_lines.pkl')
-mthvdc_dc_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVDC_lines.pkl')
-mthvdc_ac_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVAC_lines.pkl')
+use_avg = False # True if use avg number of cables in bundle.
+print('If plots are using avg number of bundles of cable per line: ' + str(use_avg))
+hvac_data = pd.read_pickle(datapath+'HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+mthvdc_dc_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+mthvdc_ac_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
 
 dataframes = [hvac_data, mthvdc_dc_data, mthvdc_ac_data]
 
@@ -65,7 +67,7 @@ bar_width = 0.35  # width of each bar
 indices = np.arange(n_bins)  # positions of the bars on the x-axis
 
 # Plot HVAC dataset with hatch pattern (shifted by bar_width/2)
-df_hvac.set_index(['Dataset', df_hvac.index]).unstack(level=0).plot(kind='bar', stacked=True, ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'], hatch='//', width=bar_width, position=0)
+df_hvac.set_index(['Dataset', df_hvac.index]).unstack(level=0).plot(kind='bar', stacked=True, ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'], hatch = '//', width=bar_width, position=0)
 
 # Plot MTHVDC_AC dataset (shifted by -bar_width/2)
 df_mthvdc_ac.set_index(['Dataset', df_mthvdc_ac.index]).unstack(level=0).plot(kind='bar', stacked=True, ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'], width=bar_width, position=1)
@@ -90,10 +92,10 @@ color_legend_500 = mpatches.Patch(color='#2ca02c', label='500 kV')
 color_legend_765 = mpatches.Patch(color='#d62728', label='765 kV')
 
 # Create a custom hatch pattern legend entry for HVAC
-hatch_legend = mpatches.Patch(hatch=None, label='HVAC Scenario', edgecolor='black', facecolor='white')
+hatch_legend = mpatches.Patch(hatch='//', label='HVAC Scenario', edgecolor='black', facecolor='white')
 
 # Create a custom colorless patch for MTHVDC_AC scenario
-mthvdc_legend = mpatches.Patch(hatch='//', label='MTHVDC Scenario', edgecolor='black', facecolor='white')
+mthvdc_legend = mpatches.Patch(hatch=None, label='MTHVDC Scenario', edgecolor='black', facecolor='white')
 
 # Combine the custom legend entries
 handles.extend([color_legend_230, color_legend_345, color_legend_500, color_legend_765, hatch_legend, mthvdc_legend])

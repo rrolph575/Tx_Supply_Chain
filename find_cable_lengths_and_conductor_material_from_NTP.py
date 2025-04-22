@@ -18,7 +18,7 @@ datapath = basepath + 'Data/R02_Transmission_Expansion/'
 percent_added_to_compensate_for_straightline = .3  # 30% increase
 percent_added_to_compensate_for_sag = .04 # 4% increase
 total_multiplier_for_length = 1 + percent_added_to_compensate_for_straightline + percent_added_to_compensate_for_sag
-scenario_name = 'S01'
+scenario_name = 'S03'
 use_avg = False # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
 
 
@@ -379,9 +379,9 @@ if scenario_name == 'S03':
 
 # If 'conductor' is NaN, then take the voltage value and map it to the conductor type in the following table
 data = {
-    'Voltage [kV]': [138, 230, 230, 345, 345, 500, 500, 765],
-    'Option': ['High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'High Capacity'],
-    'Conductor/Bundle': ['1 x Wolf', '2 x Grosbeak', '2 x Bluejay', '2 x Bluejay', '3 x Bluejay', '4 x Grosbeak', '6 x Bluejay', '6 x Bluejay']
+    'Voltage [kV]': [138, 230, 230, 345, 345, 500, 500, 525, 765],
+    'Option': ['High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'Standard', 'High Capacity', 'High Capacity', 'High Capacity'],
+    'Conductor/Bundle': ['1 x Wolf', '2 x Grosbeak', '2 x Bluejay', '2 x Bluejay', '3 x Bluejay', '4 x Grosbeak', '6 x Bluejay', '10 x Bluejay', '6 x Bluejay']
 }
 
 # Create DataFrame
@@ -413,6 +413,7 @@ def add_conductor_value_where_missing(gdf):
 gdf_OHL = add_conductor_value_where_missing(gdf_OHL)
 if scenario_name == 'S03':
     gdf_DC = add_conductor_value_where_missing(gdf_DC)
+    gdf_DC['Vn_HVDC'] = 525 # Add a column for the voltage level of HVDC. The existing voltage level in NTP dataset refers not to the DC conductor but the AC line that the DC conductor is connected to.
 
 
 # Take the birdtype and multiply the digit from that by the weights from ACSR.
@@ -479,6 +480,21 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg
         axis=1
     )
 
+    if gdf.iloc[0]['Remarks'] == 'New HVDC bipole':
+        # We assume 5 x Bluejay for each HVDC bipole, so 10 per HVDC line. Each row is just a bipole though. Your distance calculations shoud be fine because both bipoles are counted.
+        # 5280/1000 is converting miles to 1000s of ft
+        total_aluminum_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Al']/ 2.20462  # Converting lb to kg
+        total_steel_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Stl']/ 2.20462  # Converting lb to kg
+        gdf['Total Al [kg]'] = gdf.apply(
+            lambda row: total_aluminum_weight_in_kg_per_1000ft_DC * row['distance'] * 5280 / 1000,
+            axis=1
+        )
+        gdf['Total Stl [kg]'] = gdf.apply(
+            lambda row: total_steel_weight_in_kg_per_1000ft_DC * row['distance'] * 5280 / 1000,
+            axis=1
+        )
+        
+
     # Group by 'kV' and sum the results
     result = gdf.groupby('Vn [kV]')[['Total Al [kg]', 'Total Stl [kg]']].sum().reset_index()
     # Plotting
@@ -508,11 +524,6 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg
     plt.show()
     print(cable_type)
     print(result)
-
-    # Apply the function to the 'Conductor' column and create 'Total Al [kg]'
-    ### overwrite to just plot totals. Maybe should change to plot material amts for each kV.
-    gdf['Total Al [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict, use_avg)[0])*gdf['distance']*5280/1000  # Convert miles to 1000s of ft  
-    gdf['Total Stl [kg]'] = gdf['Conductor'].apply(lambda x: get_al_and_stl_weights(x, bird_dict,use_avg)[1])*gdf['distance']*5280/1000  
 
 
     # Print the sums of the Al and Stl in kg for each scenario

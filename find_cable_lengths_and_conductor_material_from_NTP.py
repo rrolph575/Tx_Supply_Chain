@@ -424,6 +424,10 @@ bird_dict = {
     'Grosbeak': {
         'lb per 1000 ft Al': 599,
         'lb per 1000 ft Stl': 275
+    },
+    'Bluejay_ACSS': {
+        'lb per 1000 ft Al': 1048,
+        'lb per 1000 ft Stl': 205
     }
 }
 
@@ -482,6 +486,7 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg
 
     # Creating a stacked bar chart
     result.set_index('Vn [kV]')[['Total Al [kg]', 'Total Stl [kg]']].plot(kind='bar', stacked=True, ax=ax)
+    result.to_pickle(basepath + f'{cable_type}_{scenario_name}_total_weights_by_voltage_avg_{str(use_avg)}.pkl')
 
     # Adding labels and title
     if scenario_name == 'S03':

@@ -19,7 +19,7 @@ percent_added_to_compensate_for_straightline = .3  # 30% increase
 percent_added_to_compensate_for_sag = .04 # 4% increase
 total_multiplier_for_length = 1 + percent_added_to_compensate_for_straightline + percent_added_to_compensate_for_sag
 scenario_name = 'S03'
-use_avg = False # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
+use_avg = True # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
 
 
 ### Read data

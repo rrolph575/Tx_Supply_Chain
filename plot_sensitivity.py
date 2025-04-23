@@ -80,6 +80,8 @@ for key in results.keys():
     plt.show()
 
 
+
+
 ## Total weight difference
 # total_al_sum = gdf['Total Al [kg]'].sum()
 # total_stl_sum = gdf['Total Stl [kg]'].sum()

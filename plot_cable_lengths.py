@@ -7,7 +7,7 @@ import matplotlib.patches as mpatches
 datapath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
 
 # read pkl files saved from find_cable_lengths*py
-use_avg = True # True if use avg number of cables in bundle.
+use_avg = False # True if use avg number of cables in bundle.
 print('If plots are using avg number of bundles of cable per line: ' + str(use_avg))
 hvac_data = pd.read_pickle(datapath+'HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
 mthvdc_dc_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
@@ -134,7 +134,11 @@ plt.show()
 
 # Plotting DC stacked bar plot
 fig, ax = plt.subplots(figsize=(10, 6))
-df_dc.plot(kind='bar', stacked=True, ax=ax, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])
+# Sum the HVAC voltages DC is connected to, to the actual NTP assumed voltage for DC lines
+df_dc['525 kV'] = df_dc.select_dtypes(include='number').sum(axis=1)
+# Drop the other columns
+df_dc = df_dc[['525 kV', 'Dataset']]
+df_dc.plot(kind='bar', stacked=True, ax=ax, color=['blue'])
 
 # Customizing the DC plot
 #ax.set_title('Stacked Bar Plot of MTHVDC_DC by Distance Bin and Voltage Level')

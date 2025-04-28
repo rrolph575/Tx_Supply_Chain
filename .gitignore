@@ -1,0 +1,11 @@
+*docx
+*xlsx
+*pptx
+misc/
+*pdf
+Data/
+*.png
+*.xml
+*.zip
+outputs/
+plots/

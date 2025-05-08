@@ -60,7 +60,7 @@ def get_number_structures(
     df_number_of_structures = pd.DataFrame(columns=structure_types)
     
     for struct in structure_types:
-        number_of_structures[struct] = struct_specs.loc[f'{struct}_structures_per_mile'] * miles_of_conductor[miles_of_conductor['kV'] == kv] * f'percent_{struct}'
+        number_of_structures[struct] = struct_specs.loc[f'{struct}_structures_per_mile'] * miles_of_conductor[miles_of_conductor['kV'] == kv]['miles'] * f'percent_{struct}'
 
 
     return df_number_of_structures

@@ -30,10 +30,10 @@ circuit = 'double'
 def get_number_structures(
         AC_or_DC_conductor='AC',
         AC_or_DC_scenario='AC',
-        percent_Tangent = 0.7,
-        percent_RunningAngle = 0.1,
-        percent_NonAngledDeadend = 0.1,
-        percent_AngledDeadend = 0.1
+        percent_Tangent = 1,
+        percent_RunningAngle = 1,
+        percent_NonAngledDeadend = 1,
+        percent_AngledDeadend = 1
     ):
 
     percent_values = {
@@ -86,12 +86,12 @@ def get_number_structures(
 # if __name__ == '__main__':  ## commented because of vscode settings. change later.
 
 # Constants for other parameters
-AC_or_DC_conductor='DC'
+AC_or_DC_conductor='AC'
 AC_or_DC_scenario='DC'
-percent_Tangent = 0.7
-percent_RunningAngle = 0.1
-percent_NonAngledDeadend = 0.1
-percent_AngledDeadend = 0.1
+percent_Tangent = 1
+percent_RunningAngle = 1
+percent_NonAngledDeadend = 1
+percent_AngledDeadend = 1
 
 
 df_number_struct = get_number_structures(
@@ -114,7 +114,7 @@ ax = df_number_thousands_of_structures.plot(kind='bar', stacked=True, figsize=(1
 plt.xlabel('kV',fontsize=24)
 plt.ylabel('Number of Structures (x1000)',fontsize=18)
 plt.title(f'{AC_or_DC_scenario} scenario, {AC_or_DC_conductor} conductor, {circuit} circuit',fontsize=18)
-ax.set_ylim([0,100])
+ax.set_ylim([0,180])
 plt.legend(title='Structure Type', bbox_to_anchor=(1.05, 1), loc='upper left', prop={'size': 14})
 
 # Show the plot

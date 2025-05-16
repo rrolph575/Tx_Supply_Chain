@@ -1,4 +1,4 @@
-voltage_kv,69,115,138,161,230,345,500,765
+kv,69,115,138,161,230,345,500,765
 Tangent_structures_per_mile,9,8.5,8,7,5,4.5,3,3.5
 RunningAngle_structures_per_mile,1,1,1,1,1,1,1,0.25
 NonAngledDeadend_structures_per_mile,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.125

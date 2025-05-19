@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 ## AC Scenario
 AC_lines_AC_scenario_data = {
     'Type': ['Tangent', 'Running Angle', 'Non Angled Deadend', 'Angled Deadend'],
-    'Count_AC_lines_AC_Scenario': [176, 50, 13, 13]
+    'Count_AC_lines_AC_Scenario': [175.071, 49.104, 12.380, 12.380]
 }
 df_AC_lines_AC_scenario = pd.DataFrame(AC_lines_AC_scenario_data)
 
@@ -17,14 +17,14 @@ df_AC_lines_AC_scenario = pd.DataFrame(AC_lines_AC_scenario_data)
 # AC
 AC_lines_DC_scenario_data = {    
     'Type': ['Tangent', 'Running Angle', 'Non Angled Deadend', 'Angled Deadend'],
-    'Count_AC_lines_DC_Scenario': [205,49,13,13]
+    'Count_AC_lines_DC_Scenario': [204.530, 48.710, 12.248, 12.248] 
 }
 df_AC_lines_DC_scenario = pd.DataFrame(AC_lines_DC_scenario_data)
 
 # DC
 DC_lines_DC_scenario_data = {    
     'Type': ['Tangent', 'Running Angle', 'Non Angled Deadend', 'Angled Deadend'],
-    'Count_DC_lines_DC_Scenario': [67,10,5,5]
+    'Count_DC_lines_DC_Scenario': []
 }
 
 df_DC_lines_DC_scenario = pd.DataFrame(DC_lines_DC_scenario_data)
@@ -53,7 +53,7 @@ df_pivot.plot(kind='bar', stacked=True, figsize=(10, 6))
 
 # Add labels and title
 plt.xlabel('Tower Type', fontsize=14)
-plt.ylabel('Count * 1000', fontsize=14)
+plt.ylabel('Count ($\\times 10^3$)', fontsize=14)
 plt.title('Total Towers by Scenario', fontsize=16)
 
 # Adjust legend

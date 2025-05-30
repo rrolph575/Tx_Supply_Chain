@@ -9,9 +9,9 @@ datapath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Ch
 # read pkl files saved from find_cable_lengths*py
 use_avg = False # True if use avg number of cables in bundle.
 print('If plots are using avg number of bundles of cable per line: ' + str(use_avg))
-hvac_data = pd.read_pickle(datapath+'HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
-mthvdc_dc_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
-mthvdc_ac_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+hvac_data = pd.read_pickle(datapath+'outputs/HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+mthvdc_dc_data = pd.read_pickle(datapath+'outputs/MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+mthvdc_ac_data = pd.read_pickle(datapath+'outputs/MTHVDC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
 
 dataframes = [hvac_data, mthvdc_dc_data, mthvdc_ac_data]
 

@@ -13,6 +13,16 @@ projpath = os.path.dirname(os.getcwd())
 datapath  = os.path.join(projpath,'towers','data')
 figpath = os.path.join(projpath,'plots')
 
+#%% Constants
+kv_values = [230, 345, 500, 765]
+#circuit = 'double'
+
+#%% Import conductor lengths 
+#use_avg = False # Don't use average number of cables per bundle.   These files have been generated from find_cable_lengths...py
+#hvac_data = pd.read_pickle(datapath+'HVAC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+#mthvdc_dc_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+#mthvdc_ac_data = pd.read_pickle(datapath+'MTHVDC_Scenario_HVAC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
+## Might replace above lines with Ram's numbers
 
 
 #%% Functions
@@ -41,9 +51,6 @@ def get_number_structures(
     circuit = 'double' # overwritten if AC line is 500 kV and higher
     if AC_or_DC_conductor == 'DC':
         circuit = 'single'
-        kv_values = [500]
-    if AC_or_DC_conductor == 'AC':
-        kv_values = [230, 345, 500, 765]
     df_structs = pd.read_csv(os.path.join(datapath,f'tower_{AC_or_DC_conductor}_conductor_{circuit}_circuit.csv'), header=None)
     df_structs.columns = ['kv'] + df_structs.iloc[0, 1:].astype(float).astype(int).tolist()
     df_structs = df_structs.iloc[1:,:]
@@ -56,11 +63,11 @@ def get_number_structures(
     print(datapath, f'miles_conductor_{AC_or_DC_scenario}_scenario_{AC_or_DC_conductor}_lines.csv')
 
     structure_types = ['Tangent', 'RunningAngle', 'NonAngledDeadend', 'AngledDeadend']
-    df_number_of_structures = pd.DataFrame(index=kv_values,columns=structure_types)
+    df_number_of_structures = pd.DataFrame(index=miles_of_conductor['kV'],columns=structure_types)
 
     # Find number of structures by type
     for struct in structure_types:
-        for kv in kv_values:
+        for kv in df_structs.index:
             # Use single circuit data if AC line is 500 kV and higher. 
             if (AC_or_DC_conductor == 'AC' and kv >= 500) or AC_or_DC_conductor == 'DC':
                 circuit = 'single'
@@ -76,35 +83,22 @@ def get_number_structures(
 def calc_steel_weights(df_number_struct, AC_or_DC_conductor, AC_or_DC_scenario):
     
     tower_types = ['Tangent', 'RunningAngle', 'NonAngledDeadend', 'AngledDeadend']
-
-    if AC_or_DC_conductor == 'AC':
-        tp = 'steelpole'
-        circuit_type = 'double' # overwritten if AC line is 500 kV and higher
-        kv_values = [230, 345, 500, 765]
-    if AC_or_DC_conductor == 'DC':
-        tp = 'steeltower'
-        circuit_type = 'single'
-        kv_values = [500]
-    
-    df_steel = pd.DataFrame(index=kv_values, columns=tower_types)
+    df_steel = pd.DataFrame(index=df_number_struct.index, columns=tower_types)
 
     # Calculate steel weights for each tower type
     for struct in tower_types:
+        if AC_or_DC_conductor == 'AC':
+            tp = 'steelpole'
+            circuit_type = 'double' # overwritten if AC line is 500 kV and higher
+        else:
+            tp = 'steeltower'
+            circuit_type = 'single'
         filename = os.path.join(datapath, f'structure_{AC_or_DC_conductor.lower()}_{tp}_{circuit_type}circuit_{struct.lower()}.csv')
-        print(filename)
         df_materials = pd.read_csv(filename, header=None)
         df_materials.columns = ['kv'] + df_materials.iloc[0, 1:].astype(float).astype(int).tolist()
         df_materials = df_materials.iloc[1:,:]
         df_materials = df_materials.set_index('kv').T
-        for kv in kv_values:
-            print(kv_values)
-            print(kv)
-            print(AC_or_DC_conductor)
-            if AC_or_DC_conductor == 'AC' and kv < 500:
-                print('this cell is bring run')
-                print(df_materials.loc[kv,'steelweight_lbs'])
-                print(math.ceil(df_number_struct.loc[kv, struct]))
-                df_steel.loc[kv, struct] = df_materials.loc[kv,'steelweight_lbs'] * math.ceil(df_number_struct.loc[kv, struct])
+        for kv in df_number_struct.index:
             # Assume single circuit if AC line is 500 kV and higher
             if (AC_or_DC_conductor == 'AC' and kv >= 500) or AC_or_DC_conductor == 'DC':
                 circuit_type = 'single'
@@ -113,14 +107,13 @@ def calc_steel_weights(df_number_struct, AC_or_DC_conductor, AC_or_DC_scenario):
                 df_materials.columns = ['kv'] + df_materials.iloc[0, 1:].astype(float).astype(int).tolist()
                 df_materials = df_materials.iloc[1:,:]
                 df_materials = df_materials.set_index('kv').T
-            # df_materials contains steel weight per structure for each type
-                df_steel.loc[kv,struct] = df_materials.loc[kv,'steelweight_lbs'] * math.ceil(df_number_struct.loc[kv, struct])
+            # Assuming df_materials contains steel weight per structure for each type
+            if AC_or_DC_conductor == 'DC' and kv == 500:
+                df_steel.loc[kv,struct] = (
+                df_materials.loc[kv,'steelweight_lbs'] * math.ceil(df_number_struct.loc[kv, struct])
+            )
             else:
-                print('the else statemetn is being run with ')
-                print(AC_or_DC_conductor)
-                print(kv)
-                print(struct)
-                #df_steel.loc[kv, struct] = 0
+                df_steel.loc[kv, struct] = 0
 
     return df_steel
 
@@ -130,8 +123,8 @@ def calc_steel_weights(df_number_struct, AC_or_DC_conductor, AC_or_DC_scenario):
 
 
 # Constants for other parameters
-AC_or_DC_conductor='AC'
-AC_or_DC_scenario='AC'
+AC_or_DC_conductor='DC'
+AC_or_DC_scenario='DC'
 percent_Tangent = 1
 percent_RunningAngle = 1
 percent_NonAngledDeadend = 1
@@ -154,6 +147,7 @@ df_number_thousands_of_structures = df_number_struct/1e3
 ax = df_number_thousands_of_structures.plot(kind='bar', stacked=True, figsize=(10, 6))
 
 # Add labels and title
+#plt.rcParams.update({'font.size': 18})
 plt.xlabel('kV',fontsize=24)
 plt.ylabel('Number of Structures ($\\times 10^3$)',fontsize=18)
 plt.title(f'{AC_or_DC_scenario} scenario, {AC_or_DC_conductor} conductor', fontsize=18)
@@ -183,13 +177,3 @@ plt.tight_layout()
 plt.show()
 
 
-print('Number of thousands of structures by type: ')
-print(df_number_thousands_of_structures.sum(axis=0))
-
-print('Number of thousands of structures by voltage: ' )
-print(df_number_thousands_of_structures.sum(axis=1))
-
-
-# Save df_number_struct and df_steel to csv
-df_number_struct.to_csv(os.path.join(datapath, f'number_structures_{AC_or_DC_scenario}_scenario_{AC_or_DC_conductor}_lines.csv'))
-df_steel.to_csv(os.path.join(datapath, f'steel_weights_{AC_or_DC_scenario}_scenario_{AC_or_DC_conductor}_lines.csv'))

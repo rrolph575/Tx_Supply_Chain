@@ -18,8 +18,8 @@ datapath = basepath + 'Data/R02_Transmission_Expansion/'
 percent_added_to_compensate_for_straightline = .3  # 30% increase
 percent_added_to_compensate_for_sag = .04 # 4% increase
 total_multiplier_for_length = 1 + percent_added_to_compensate_for_straightline + percent_added_to_compensate_for_sag
-scenario_name = 'S03'
-use_avg = True # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
+scenario_name = 'S01'
+use_avg = False # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
 
 
 ### Read data
@@ -107,7 +107,7 @@ if scenario_name == 'S01':
     OHL_df['ToBusLocation'] = OHL_df['ToBusLocation'].apply(correct_coordinates)
 
     # For those lines where Length[km]=0, add 'Geometry' column so you can calculate the distance of the lines. 
-    # For those lines where Length[km] is given, there is not a way to calculate the geometry/distance becuase 
+    # For some lines where Length[km] is given, there is not a way to calculate the geometry/distance becuase 
     # some 'ToBus' node locations are not provided, which should be fine becuase the lengths are already given 
     # for those lines.
 
@@ -133,11 +133,18 @@ gdf_OHL = gdf_OHL.to_crs(epsg=32614) # meters that are more focused on center US
 # Calculate the distance of each LineString geometry
 gdf_OHL['distance'] = gdf_OHL.geometry.length/1e3*total_multiplier_for_length # Convert meters to km and apply length multipliers
 gdf_OHL['distance'] = gdf_OHL['distance']*0.62 # convert km to miles
+
+
+# !! Added on 1 May 2025.  If the lengths are provided already, then use those and not the calculated distance 
+gdf_OHL['distance'] = gdf_OHL.apply(
+    lambda row: row['Length[km]'] if row['Length[km]'] != 0 else row['distance'], axis=1
+)
+
 # If the lengths are not provided in S01, you also don't have the coordinates of both endpoints, so use the lengths
 # provided in the S01 dataset.  This is not for very many points.
 if scenario_name == 'S01':
     gdf_OHL['distance'] = gdf_OHL['Length[km]'].where(gdf_OHL['Length[km]'] != 0, gdf_OHL['distance'])*0.62*total_multiplier_for_length # Convert from km to miles
-
+    # This is only happening once
 
 
 

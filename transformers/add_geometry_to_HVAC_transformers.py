@@ -140,7 +140,7 @@ gdf_OHL.to_csv(filenames[0] + '_HVAC_location.csv', index=False)
 
 '''
 
-# Can definitely make this code better .. without commenting.. #TODO
+# #TODO
 ## After running commented code above, combine all the dataframes into one
 filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
 df_list = [pd.read_csv(f + '_HVAC_location.csv') for f in filenames]

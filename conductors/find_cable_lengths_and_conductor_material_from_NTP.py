@@ -18,7 +18,7 @@ datapath = basepath + 'Data/R02_Transmission_Expansion/'
 percent_added_to_compensate_for_straightline = .3  # 30% increase
 percent_added_to_compensate_for_sag = .04 # 4% increase
 total_multiplier_for_length = 1 + percent_added_to_compensate_for_straightline + percent_added_to_compensate_for_sag
-scenario_name = 'S01'
+scenario_name = 'S03'
 use_avg = False # False if you want to use specified number of bundles per cable, True if average number of bundles per cable. (Cable types are consistently Bluejay, even with NTP assumptions.)
 
 
@@ -334,6 +334,7 @@ if scenario_name == 'S03':
     df['Distance_Bin'] = pd.cut(df['distance'], bins=bins, labels=labels, right=False)
     # Group by 'Distance_Bin' and 'Vn [kV]', and count the occurrences
     grouped = df.groupby(['Distance_Bin', 'Vn [kV]']).size().unstack(fill_value=0)
+    print(f'this is mthvdc_dc: {grouped}')
     pd.to_pickle(grouped, basepath + 'MTHVDC_Scenario_HVDC_lines' + str(use_avg) + '_avg_num_bundles.pkl')
     # Plot the stacked bar plot
     ax = grouped.plot(kind='bar', stacked=True, figsize=(10, 6), colormap='tab20')
@@ -488,8 +489,9 @@ def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg
     )
 
     if gdf.iloc[0]['Remarks'] == 'New HVDC bipole':
-        # We assume 5 x Bluejay for each HVDC bipole, so 10 per HVDC line. Each row is just a bipole though. Your distance calculations shoud be fine because both bipoles are counted.
-        # 5280/1000 is converting miles to 1000s of ft
+        # We assume 5 x Bluejay for each HVDC pole. so 2 x 5 x Bluejay for each HVDC bipole. 
+        # 5280/1000 is converting miles to 1000s of ft. if we assume Bluejay as conductors (1092 A thermal rating, derated for conservative design to 80%) and 525 kV for the HVDC design, this would mean # 2000 MW monopole: I = 2000/525 = 3.8 kA i.e. 5 Bluejay conductor bundle. # 4000 MW bipole: I = 4000/(525 –(-525)) = 3.8 kA i.e. 5 Bluejay conductor bundle per pole.
+
         total_aluminum_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Al']/ 2.20462  # Converting lb to kg
         total_steel_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Stl']/ 2.20462  # Converting lb to kg
         gdf['Total Al [kg]'] = gdf.apply(

@@ -19,27 +19,27 @@ from shapely.wkt import loads
 
 
 # Define datafiles
-node_locations_ifile = 'Data/R02_Transmission_Expansion/CONUS_nodes_UPDATE.csv'
-coastal_shape_ifile = 'Data/ne_10m_coastline/ne_10m_coastline.shp'
-coast_counties_ifile = 'Data/Coastal_Counties/Coastal_Counties.shp'
-ifile_urban_shp = 'Data/tl_2024_us_uac20/tl_2024_us_uac20.shp'   
+node_locations_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/R02_Transmission_Expansion/CONUS_nodes_UPDATE.csv'))
+coastal_shape_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/ne_10m_coastline/ne_10m_coastline.shp'))
+coast_counties_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/Coastal_Counties/Coastal_Counties.shp'))
+ifile_urban_shp = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/tl_2024_us_uac20/tl_2024_us_uac20.shp'))
+datapath = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/R02_Transmission_Expansion/'))
+
+# Read files
 gdf_urban = get_urban(ifile_urban_shp) # simplified ifile    
 node_locations_all = pd.read_csv(node_locations_ifile) # This needs to be filtered to just transformers.
-basepath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
-datapath = basepath + "Data/R02_Transmission_Expansion/"
+
 
 
 
 # Read in files
-scenario_name = 'S03'  # S01 is only HVAC and S03 has both HVDC and HVAC.
-if scenario_name == 'S01':
-    filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
-if scenario_name == 'S03':
-    filenames = ['R02_S03_Transmission_Expansion_CONUS-2']
+scenario_name = 'S01'  # S01 is only HVAC and S03 has both HVDC and HVAC.
+filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
+
 dfs = []
 # Combine df from the S01 scenarios
 for file in filenames:
-    df = pd.read_csv(datapath + file + '.csv')
+    df = pd.read_csv(os.path.join(datapath, file + '.csv'))
     dfs.append(df)
 df_all = pd.concat(dfs, ignore_index=True)
 
@@ -51,7 +51,7 @@ df_all = pd.concat(dfs, ignore_index=True)
 #   For now, I am assuming the transformer is located at the 'ToBus' node. Have to map the 'ToBus' node number to the CONUS_nodes_updates.csv file.
 if scenario_name=='S01':
     # Read all of the files 
-    filtered_df_HVAC_transformers = pd.read_pickle('combined_HVAC_location.pkl') # Generated from add_geometry_to_HVAC_transformers.py
+    filtered_df_HVAC_transformers = pd.read_pickle(os.path.abspath(os.path.join(os.getcwd(), '..', 'outputs/combined_HVAC_location.pkl'))) # Generated from add_geometry_to_HVAC_transformers.py
     filtered_df_HVAC_transformers['geometry'] = filtered_df_HVAC_transformers['geometry'].apply(loads)
     # Ensure it's a GeoDataFrame
     filtered_df_HVAC_transformers = gpd.GeoDataFrame(filtered_df_HVAC_transformers, geometry='geometry')
@@ -339,6 +339,14 @@ if scenario_name == 'S01':
     print('Total number of transformers 500 kV or higher outside of urban and coastal areas:' + str(total_500kV_and_higher_outside_urban_and_coastal))
     print(f'Percent HVAC 500 kV or higher outside of urban and coastal areas: {scenario_name}: {total_500kV_and_higher_outside_urban_and_coastal/number_hvac_transformers_for_scenario1*100}')
     print(f'Percent HVAC total SF6 transformers: {total_sf6_transformers/number_hvac_transformers_for_scenario1 * 100}')
+
+
+    #total_sf6_transformers = df_merged_both['Total required units'].sum() + total_500kV_and_higher_outside_urban_and_coastal
+    print(f'breakdown of transformers 500 kV and higher outside urban/coast: {df_merged_500kV_HVAC_outside_urban_and_coastal}')
+    
+    print(f'breakdown of urban and coastal transformers: {df_merged_both}')
+
+
 if scenario_name == 'S03':
     percent_urban_and_coastal_HVAC = df_merged_both['Total required units'].sum()/number_hvac_transformers_for_scenario3 * 100
     print('Percent urban and coastal HVAC transformers for scenario ' + str(scenario_name) +': ' + str(percent_urban_and_coastal_HVAC))

@@ -18,28 +18,28 @@ from shapely.wkt import loads
 
 
 
+
 # Define datafiles
-node_locations_ifile = 'Data/R02_Transmission_Expansion/CONUS_nodes_UPDATE.csv'
-coastal_shape_ifile = 'Data/ne_10m_coastline/ne_10m_coastline.shp'
-coast_counties_ifile = 'Data/Coastal_Counties/Coastal_Counties.shp'
-ifile_urban_shp = 'Data/tl_2024_us_uac20/tl_2024_us_uac20.shp'   
+node_locations_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/R02_Transmission_Expansion/CONUS_nodes_UPDATE.csv'))
+coastal_shape_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/ne_10m_coastline/ne_10m_coastline.shp'))
+coast_counties_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/Coastal_Counties/Coastal_Counties.shp'))
+ifile_urban_shp = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/tl_2024_us_uac20/tl_2024_us_uac20.shp'))
+datapath = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/R02_Transmission_Expansion/'))
+
+# Read files
 gdf_urban = get_urban(ifile_urban_shp) # simplified ifile    
 node_locations_all = pd.read_csv(node_locations_ifile) # This needs to be filtered to just transformers.
-basepath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
-datapath = basepath + "Data/R02_Transmission_Expansion/"
+
 
 
 
 # Read in files
 scenario_name = 'S03'  # S01 is only HVAC and S03 has both HVDC and HVAC.
-if scenario_name == 'S01':
-    filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
-if scenario_name == 'S03':
-    filenames = ['R02_S03_Transmission_Expansion_CONUS-2']
+filenames = ['R02_S03_Transmission_Expansion_CONUS-2']
 dfs = []
 # Combine df from the S01 scenarios
 for file in filenames:
-    df = pd.read_csv(datapath + file + '.csv')
+    df = pd.read_csv(os.path.join(datapath, file + '.csv'))
     dfs.append(df)
 df_all = pd.concat(dfs, ignore_index=True)
 
@@ -196,6 +196,8 @@ print('The number of BOTH urban & coastal HVAC transformers (no duplicates), usi
 df_merged_500andup = pd.merge(df_transformer_assumptions, HVAC_500andHigher_count, left_on='Voltage_cleaned', right_index=True)
 df_merged_500andup['Total required units'] = df_merged_500andup['Required units to achieve 2000 MVA'] * df_merged_500andup['count']
 total_number_HVAC_transformers_500andup = df_merged_500andup['Total required units'].sum()
+print(scenario_name)
+print(f'The number of HVAC transformers 500 and higher {total_number_HVAC_transformers_500andup}')
 
 
 ####### Get the node locations of HVDC transformers in coastal areas ################
@@ -289,6 +291,8 @@ if scenario_name == 'S03':
     print('Total number converter-transformers both urban plus coastal (no duplicates)' + str(total_number_converter_transformers_both))
 
     total_number_500andup = number_converter_transformers_per_HVDC_line_end*(HVDC_locations_500kV_and_higher_total_side1.shape[0] + HVDC_locations_500kV_and_higher_total_side2.shape[0])
+
+
 ## These are taken from runs of Number_transformers.py:
 # HVAC scenario
 number_hvac_transformers_for_scenario1 = 1860
@@ -325,3 +329,20 @@ total_number_SF6_HVAC = HVAC_total_number_500kV_and_higher_outside_coast_and_urb
 #total_500andhigher_in_dataset_HVDC = 
 HVDC_500kV_and_higher_outside_coast_and_urban = total_number_500andup - total_number_converter_transformers_both
 total_number_SF6_HVDC = HVDC_500kV_and_higher_outside_coast_and_urban + total_number_converter_transformers_both 
+
+print(f'total number transformers that have sf6 switchgears {total_number_SF6_HVAC}')
+
+
+#### 
+""" 
+# Number of nodes within urban and coastal. Multiply this by number_converter_transformers_per_HVDC_line_end
+hvdc_nodes_within_both_areas 
+
+# Group by 'Vn [kV]' and sum the 'Total required units' for each unique value
+total_units_by_voltage = df_all_HVDC_transformer_locations.groupby('Vn [kV]')['Total required units'].sum()
+
+# Convert the result to a DataFrame (optional)
+total_units_by_voltage_df = total_units_by_voltage.reset_index()
+
+# Print the result
+print(total_units_by_voltage_df) """

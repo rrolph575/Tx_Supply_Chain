@@ -8,7 +8,7 @@ from matplotlib.ticker import MaxNLocator
 basepath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
 datapath = basepath + "Data/R02_Transmission_Expansion/"
 plotpath = basepath + "plots_new/"
-scenario_name = 'S03'  # S01 is only HVAC and S03 has both HVDC and HVAC.
+scenario_name = 'S01'  # S01 is only HVAC and S03 has both HVDC and HVAC.
 # Assumption on MVA capacity per transformer
 #MVA_per_transformer = 400 # MVA per HVAC transformer. But right now we are using Hico america assumptions below.
 # Assumption on # converter-transformers per HVDC line
@@ -20,7 +20,8 @@ plot_only = True
 
 
 if scenario_name == 'S01':
-    filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
+    filenames = ['R02_S01_Transmission_Expansion_EI-1' , 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
+
 if scenario_name == 'S03':
     filenames = ['R02_S03_Transmission_Expansion_CONUS-2']
 
@@ -32,7 +33,7 @@ for file in filenames:
     dfs.append(df)
 df_all = pd.concat(dfs, ignore_index=True)
 
-
+#df = df_all.copy()  # !!!! COMMENT THIS WHEN DONE DEBUGGING
 
 #def get_number_transformers(df, MVA_per_transformer, scenario_name):
 def get_number_transformers(df, scenario_name):       
@@ -41,12 +42,13 @@ def get_number_transformers(df, scenario_name):
     df = df[(df['Add [Y/N]'] == 'Y')]  # !!! Added this line already to include only 'Y' column !!!!
     if scenario_name == 'S01':
         filtered_df = np.nan # number of lines with converter-transformers
-        filtered_df_HVAC_transformers = df[df['Vn [kV]'].str.match(r'^\d{6}$')] # 6 integers indicates a step up/down
+        filtered_df_HVAC_transformers = df[df['Type'] == '2TF'] # 6 integers indicates a step up/down
         # Calculate how many transformers needed to match capacity from data
         #filtered_df_HVAC_transformers['Number_transformers_needed'] = np.ceil(filtered_df_HVAC_transformers['Rate1[MVA]']/MVA_per_transformer)
     if scenario_name == 'S03': 
         filtered_df = df[(df['Add [Y/N]'] == 'Y') & (df['Type'] == 'HVDC')] # number of lines with converter-transformers
-        filtered_df_HVAC_transformers = df[df['Vn [kV]'].str.match(r'^\d{6}$')] # 6 integers indicates a step up/down
+        #filtered_df_HVAC_transformers = df[df['Vn [kV]'].str.match(r'^\d{6}$')] # 6 integers indicates a step up/down
+        filtered_df_HVAC_transformers = df[df['Type'] == '2TF']
         #filtered_df_HVAC_transformers['Number_transformers_needed'] = np.ceil(filtered_df_HVAC_transformers['Rate1[MVA]']/MVA_per_transformer)
     return filtered_df, filtered_df_HVAC_transformers
 
@@ -86,6 +88,8 @@ if scenario_name == 'S01' or calc_AC_transformers_in_MTHVDC_scenario == True:
 
     # Count the occurrences of each unique 'Vn [kV]' value
     vn_counts = filtered_df_HVAC_transformers['Vn [kV]'].value_counts()
+    vn_counts.index = vn_counts.index.str.replace('/', '', regex=False)
+    vn_counts = vn_counts.groupby(vn_counts.index).sum()
     vn_counts.index = vn_counts.index.str[:3] + '-' + vn_counts.index.str[3:]
     
     """# Number of rows for HVAC transformers
@@ -238,7 +242,7 @@ if scenario_name == 'S03':
 ### This is a plot of data taken from above runs, can make this automated later if necessary..
 if plot_only == 'True': 
     # HVAC scenario
-    number_hvac_transformers_for_scenario1 = 1860 # df_merged['Total required units'].sum() 
+    number_hvac_transformers_for_scenario1 = 1914 # df_merged['Total required units'].sum() 
     # MTHVDC scenario
     number_converter_transformers_for_scenario2 =  960 # number_converter_transformers
     number_hvac_transformers_for_scenario2 = 474 # df_merged['Total required units'].sum() 

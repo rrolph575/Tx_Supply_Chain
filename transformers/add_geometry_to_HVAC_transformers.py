@@ -145,6 +145,6 @@ gdf_OHL.to_csv(filenames[0] + '_HVAC_location.csv', index=False)
 filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
 df_list = [pd.read_csv(f + '_HVAC_location.csv') for f in filenames]
 combined_df = pd.concat(df_list, ignore_index=True)
-combined_df.to_pickle('combined_HVAC_location.pkl')
+combined_df.to_pickle('outputs/combined_HVAC_location.pkl')
 
 '''

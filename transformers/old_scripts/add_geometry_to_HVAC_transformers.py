@@ -18,8 +18,8 @@ scenario_name = 'S01'   # This script for adding geometry is only needed for S01
 
 ### Read data
 if scenario_name == 'S01':
-    #filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
-    filenames = ['R02_S01_Transmission_Expansion_WECC-1']
+    filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
+    #filenames = ['R02_S01_Transmission_Expansion_WECC-1']
     filename_str = filenames[0].split('_')[-1].split('-')[0]  # return, e.g. ERCOT for that filename
 if scenario_name == 'S03':
     filenames = ['R02_S03_Transmission_Expansion_CONUS-2']
@@ -140,7 +140,7 @@ gdf_OHL.to_csv(filenames[0] + '_HVAC_location.csv', index=False)
 
 '''
 
-# #TODO
+# 
 ## After running commented code above, combine all the dataframes into one
 filenames = ['R02_S01_Transmission_Expansion_EI-1', 'R02_S01_Transmission_Expansion_ERCOT-1', 'R02_S01_Transmission_Expansion_WECC-1']
 df_list = [pd.read_csv(f + '_HVAC_location.csv') for f in filenames]

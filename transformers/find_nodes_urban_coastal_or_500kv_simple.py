@@ -212,3 +212,4 @@ print(f'Total transformers that are either in coastal, urban, or 500 kV outside 
 
 
 print('Note you should include all 500 kV and up on the summary spreadsheet, not just the ones listed here')
+print('Just make sure the number of those transformers below 500 kV (if any printed above) are added to the spreadsheet')

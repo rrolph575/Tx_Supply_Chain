@@ -20,7 +20,7 @@ import matplotlib.patches as mpatches
 #%% Inputs
 
 ## Define scenario name
-scenario_name = 'S01' 
+scenario_name = 'S03' 
 
 ## Define datafiles
 coastal_shape_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/ne_10m_coastline/ne_10m_coastline.shp'))
@@ -209,3 +209,6 @@ combined_df = combined_df.groupby('Voltage', as_index=False).sum()
 
 # Print the resulting DataFrame
 print(f'Total transformers that are either in coastal, urban, or 500 kV outside of coastal and urban.  Note that all 500 kV transformers (even if in a coastal and urban area should also be added when assuming all 500 kV are SF6 switchgears.  Just wanted to see here how many 500 kV are outside urban and coastal as an experiment.) {combined_df}')
+
+
+print('Note you should include all 500 kV and up on the summary spreadsheet, not just the ones listed here')

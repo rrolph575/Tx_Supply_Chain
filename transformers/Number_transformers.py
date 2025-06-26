@@ -8,7 +8,7 @@ from matplotlib.ticker import MaxNLocator
 basepath = "C:/Users/rrolph/OneDrive - NREL/Projects/FY25/Transmission_Supply_Chain/"
 datapath = basepath + "Data/R02_Transmission_Expansion/"
 plotpath = basepath + "plots_new/"
-scenario_name = 'S01'  # S01 is only HVAC and S03 has both HVDC and HVAC.
+scenario_name = 'S03'  # S01 is only HVAC and S03 has both HVDC and HVAC.
 # Assumption on MVA capacity per transformer
 #MVA_per_transformer = 400 # MVA per HVAC transformer. But right now we are using Hico america assumptions below.
 # Assumption on # converter-transformers per HVDC line
@@ -33,9 +33,6 @@ for file in filenames:
     dfs.append(df)
 df_all = pd.concat(dfs, ignore_index=True)
 
-#df = df_all.copy()  # !!!! COMMENT THIS WHEN DONE DEBUGGING
-
-#def get_number_transformers(df, MVA_per_transformer, scenario_name):
 def get_number_transformers(df, scenario_name):       
     # Filter the data to transformers only (where the voltage steps up or down)
     df['Vn [kV]'] = df['Vn [kV]'].astype(str)

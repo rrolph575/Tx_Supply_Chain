@@ -193,7 +193,7 @@ df_dc_plot_reindexed.set_index(['Dataset', df_dc_plot_reindexed.index]).unstack(
 )
 
 print(ax.get_xticks())
-ax.set_ylabel('Number of Lines', fontweight='bold', fontsize=18)
+ax.set_ylabel('Number of transmission lines', fontweight='bold', fontsize=18)
 
 indices = np.arange(n_bins)  # positions of the bars on the x-axis
 ax.set_xticks(indices)
@@ -248,11 +248,11 @@ df_ac_dc_indices = list(df_ac.index[0:4]) + list(df_dc.index)
 df_dc_indices = (['']*4) + list(df_dc.index)
 for i in range(n_bins):
     if i in range(4):
-        ax.text(indices[i] - bar_width / 2, -15, 'HVAC', ha='center', va='top', fontsize=14, rotation=90)
-        ax.text(indices[i] + bar_width / 2, -15, 'MT-HVDC', ha='center', va='top', fontsize=14, rotation=90)
+        ax.text(indices[i] - bar_width / 2, -15, 'AC', ha='center', va='top', fontsize=14, rotation=90)
+        ax.text(indices[i] + bar_width / 2, -15, 'MT', ha='center', va='top', fontsize=14, rotation=90)
         ax.text(indices[i], -165, df_ac_dc_indices[i], ha='center', va='top', fontsize=16)  
     if i in range(4, n_bins):
-        ax.text(indices[i], -15, 'MT-HVDC', ha='center', va='top', fontsize=14, rotation=90)
+        ax.text(indices[i], -15, 'MT', ha='center', va='top', fontsize=14, rotation=90)
         ax.text(indices[i], -165, df_ac_dc_indices[i], ha='center', va='top', fontsize=16)  
 
 ax.set_xlabel('Distance (miles)', labelpad=110, fontsize=18, fontweight='bold')

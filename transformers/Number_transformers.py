@@ -208,16 +208,16 @@ if scenario_name == 'S03':
 
     number_converter_transformers = combined_counts.values*number_converter_transformers_per_line
 
-    ax.bar(combined_counts.index, number_converter_transformers, color='skyblue', edgecolor='black')
+    ax.bar(combined_counts.index, number_converter_transformers, color='#FF8C00', edgecolor=None)
 
     # Set plot title and labels
-    ax.set_title('# Converter-Transformers assuming ' + str(number_converter_transformers_per_line) + ' per line') #, ' + scenario_name)
-    ax.set_xlabel('Voltage (kV) on FROM bus')
-    ax.set_ylabel('Number of converter-transformers')
+    #ax.set_title('# Converter-Transformers assuming ' + str(number_converter_transformers_per_line) + ' per line') #, ' + scenario_name)
+    ax.set_xlabel('Voltage (kV) on HVAC side', labelpad=10, fontsize=14)
+    ax.set_ylabel('Number of converter-transformers', fontsize=14)
 
     # Set the y-axis to have integer ticks
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
+    plt.xticks(rotation=90)
     # Add a legend
     #ax.legend(title="Rate1[MVA]")
 

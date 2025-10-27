@@ -136,8 +136,8 @@ gdf_OHL['distance'] = gdf_OHL['distance']*0.62 # convert km to miles
 
 
 # !! Added on 1 May 2025.  If the lengths are provided already, then use those and not the calculated distance 
-gdf_OHL['distance'] = gdf_OHL.apply(
-    lambda row: row['Length[km]'] if row['Length[km]'] != 0 else row['distance'], axis=1
+if scenario_name == 'S01':
+    gdf_OHL['distance'] = gdf_OHL.apply(lambda row: row['Length[km]'] if row['Length[km]'] != 0 else row['distance'], axis=1
 )
 
 # If the lengths are not provided in S01, you also don't have the coordinates of both endpoints, so use the lengths
@@ -448,6 +448,7 @@ stl_values = [bird['lb per 1000 ft Stl'] for bird in bird_dict.values()]
 avg_stl_weight_per_1000ft = sum(stl_values)/ len(stl_values)
 
 
+# This is per conductor! not yet including the 2x for DC bipole or 3 phase AC. That is taken into account in plot_al_and_stl...
 def get_al_and_stl_weights(conductor_str, bird_dict, use_avg):
     if use_avg==False:
         # This means to use individual weight densities by cable type
@@ -478,22 +479,24 @@ def get_al_and_stl_weights(conductor_str, bird_dict, use_avg):
 
 def plot_al_and_stl_for_each_kv_and_type(cable_type, gdf, scenario_name, use_avg):
     # Calculate the weight for aluminum and steel for each row. 5280/1000 is converting miles to 1000 ft bc weight is in kg/1000ft
+    # 3 * for 3 phase HVAC. The 2* for DC bipole is taken into account inthe if statment below.
     gdf['Total Al [kg]'] = gdf.apply(
-        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[0] * row['distance'] * 5280 / 1000, 
+        lambda row: 3* get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[0] * row['distance'] * 5280 / 1000, 
         axis=1
     )
 
     gdf['Total Stl [kg]'] = gdf.apply(
-        lambda row: get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[1] * row['distance'] * 5280 / 1000,
+        lambda row: 3 * get_al_and_stl_weights(row['Conductor'], bird_dict, use_avg)[1] * row['distance'] * 5280 / 1000,
         axis=1
     )
 
+    # This overwrites the gdf Al and Stl if DC . 
     if gdf.iloc[0]['Remarks'] == 'New HVDC bipole':
         # We assume 5 x Bluejay for each HVDC pole. so 2 x 5 x Bluejay for each HVDC bipole. 
         # 5280/1000 is converting miles to 1000s of ft. if we assume Bluejay as conductors (1092 A thermal rating, derated for conservative design to 80%) and 525 kV for the HVDC design, this would mean # 2000 MW monopole: I = 2000/525 = 3.8 kA i.e. 5 Bluejay conductor bundle. # 4000 MW bipole: I = 4000/(525 –(-525)) = 3.8 kA i.e. 5 Bluejay conductor bundle per pole.
 
-        total_aluminum_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Al']/ 2.20462  # Converting lb to kg
-        total_steel_weight_in_kg_per_1000ft_DC = 5* bird_dict['Bluejay']['lb per 1000 ft Stl']/ 2.20462  # Converting lb to kg
+        total_aluminum_weight_in_kg_per_1000ft_DC = 2* 5* bird_dict['Bluejay']['lb per 1000 ft Al']/ 2.20462  # Converting lb to kg
+        total_steel_weight_in_kg_per_1000ft_DC = 2* 5* bird_dict['Bluejay']['lb per 1000 ft Stl']/ 2.20462  # Converting lb to kg
         gdf['Total Al [kg]'] = gdf.apply(
             lambda row: total_aluminum_weight_in_kg_per_1000ft_DC * row['distance'] * 5280 / 1000,
             axis=1

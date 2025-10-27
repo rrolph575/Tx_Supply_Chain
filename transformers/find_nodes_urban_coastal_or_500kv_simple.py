@@ -20,7 +20,7 @@ import matplotlib.patches as mpatches
 #%% Inputs
 
 ## Define scenario name
-scenario_name = 'S03' 
+scenario_name = 'S01' 
 
 ## Define datafiles
 coastal_shape_ifile = os.path.abspath(os.path.join(os.getcwd(), '..', 'Data/ne_10m_coastline/ne_10m_coastline.shp'))

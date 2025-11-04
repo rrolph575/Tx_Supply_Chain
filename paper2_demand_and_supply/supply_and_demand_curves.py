@@ -74,7 +74,7 @@ def plot_demand_and_supply_curve(selected_material):
     ax.legend(
         handles=[line_mt, line_ac],
         loc='upper left',
-        bbox_to_anchor=(x_right, y_top +0.02),
+        bbox_to_anchor=(x_right, y_top + 0.04),
         frameon=True
     )
 

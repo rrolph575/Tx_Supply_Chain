@@ -63,6 +63,9 @@ def plot_material_scenarios(material, excel_file='Grid_RING_inputs_v2.xlsx'):
 
     plt.xticks(x, years, rotation=90)
     plt.ylabel(ylabel)
+    
+    if material == 'Steel':
+        plt.ylim(0, 0.7)
 
     # Create custom legend
     handles_tech = [Patch(facecolor=colors[i % len(colors)], label=tech) for i, tech in enumerate(all_techs)]

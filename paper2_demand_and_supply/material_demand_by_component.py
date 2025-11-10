@@ -109,7 +109,7 @@ all_techs_total = sorted(all_techs_total)
 tech_colors = {tech: plt.cm.tab20(i / len(all_techs_total)) for i, tech in enumerate(all_techs_total)}
 
 # Create figure ---
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)
 
 # Plot stacked totals ---
 for i, material in enumerate(materials):
@@ -141,15 +141,27 @@ ax.set_xlim(-0.5, len(materials) - 0.5)
 ax.set_ylabel('Total material required \n (Millions of metric tons)')
 
 # Legends ---
-# Tech color legend
+# --- Tech legend: top left inside plot, 3 columns ---
 tech_handles = [Patch(facecolor=tech_colors[tech], label=tech) for tech in all_techs_total]
-tech_legend = ax.legend(handles=tech_handles, bbox_to_anchor=(1, 1), loc='upper left', frameon=True)
-
-# Scenario legend (MT vs AC)
+tech_legend = ax.legend(
+    handles=tech_handles,
+    loc='upper left',
+    bbox_to_anchor=(0.01, 1.0),
+    frameon=True,
+    fontsize=12,
+    ncol=2  # 3 columns for techs
+)
+ax.add_artist(tech_legend)
+# --- Scenario legend: top right inside plot, 1 column ---
 mt_patch = Patch(facecolor='white', edgecolor='black', label='MT')
 ac_patch = Patch(facecolor='white', edgecolor='black', hatch='//', label='AC')
-scenario_legend = ax.legend(handles=[mt_patch, ac_patch], bbox_to_anchor=(1, 0.4), loc='upper left')
+ax.legend(
+    handles=[mt_patch, ac_patch],
+    loc='upper right',
+    bbox_to_anchor=(0.99, 1.0),
+    frameon=True,
+    fontsize=12,
+    ncol=1  # single column
+)
 
-ax.add_artist(tech_legend)
-
-plt.tight_layout()
+plt.show()

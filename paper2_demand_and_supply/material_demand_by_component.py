@@ -152,6 +152,4 @@ scenario_legend = ax.legend(handles=[mt_patch, ac_patch], bbox_to_anchor=(1, 0.4
 
 ax.add_artist(tech_legend)
 
-plt.tight_layout(rect=[0, 0, 0.8, 1])
-plt.subplots_adjust(right=0.82) 
-plt.show()
+plt.tight_layout()

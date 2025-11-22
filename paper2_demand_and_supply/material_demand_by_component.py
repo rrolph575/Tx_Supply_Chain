@@ -94,7 +94,7 @@ for material in materials:
     plot_material_scenarios(material)
 
 
-materials = ['Al', 'Cu', 'Steel']
+
 width = 0.35  # width of each "half" bar (MT or AC)
 x = np.arange(len(materials))
 
@@ -107,6 +107,7 @@ all_techs_total = sorted(all_techs_total)
 
 # Assign consistent colors for all technologies ---
 tech_colors = {tech: plt.cm.tab20(i / len(all_techs_total)) for i, tech in enumerate(all_techs_total)}
+tech_colors.update({"Transmission Lines": "#0072B2", "Transformers": "#E69F00", "Circuit breakers": "#009E73", "Towers": "#56B4E9", "Batteries": "lightslategrey"})
 
 # Create figure ---
 fig, ax = plt.subplots(figsize=(10, 6), constrained_layout=True)

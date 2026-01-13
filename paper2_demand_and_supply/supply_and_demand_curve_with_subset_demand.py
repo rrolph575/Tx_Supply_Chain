@@ -1,0 +1,200 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import numpy as np
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.patches import ConnectionPatch
+
+# --- Parameters ---
+scenario = 'MT'  # 'AC' or 'MT'
+sheet = scenario+'Grid_2024MidCase'  # main sheet
+selected_material = 'copper'
+
+if selected_material == 'copper':
+    ring_breakdown_sheet = scenario + 'Grid_2024MidCase_Cu'
+else:
+    ring_breakdown_sheet = scenario + 'Grid_2024MidCase_Al'
+
+# --- Figure setup ---
+plt.rcParams.update({
+    'font.size': 18,
+    'axes.titlesize': 18,
+    'axes.labelsize': 18,
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    'legend.fontsize': 15,
+    'legend.title_fontsize': 18,
+})
+
+fig, ax = plt.subplots(figsize=(13.5, 8))
+
+# --- Read main data ---
+df = pd.read_excel('Grid_RING_inputs_v2.xlsx', sheet_name=sheet, skiprows=6)
+df_filtered = df[df['Refined Material'] == selected_material]
+
+# --- Year columns & numeric x positions ---
+year_cols = [col for col in df.columns if str(col).isdigit()]
+x = np.arange(len(year_cols))  # numeric x positions
+
+# --- Line styles and labels ---
+linestyle_map = {
+    'RING projected demand': '--',
+    'Total domestic supply': '-',
+    'USGS projected demand': ':',
+    'DOE CMA project demand': '-.',
+}
+label_map = {
+    'RING projected demand': 'Electricity sector demand (RING)',
+    'Total domestic supply': 'Total domestic supply',
+    'USGS projected demand': 'All sectors demand (USGS)',
+    'DOE CMA project demand': 'All sectors demand (DOE CMA)',
+}
+
+legend_handles = []
+df_all = []
+
+# --- Plot main lines ---
+for term, row in df_filtered.groupby('Term'):
+    linestyle = linestyle_map.get(term, '-')
+    new_label = label_map.get(term, term)
+    y_values = row[year_cols].values[0] / 1e6
+
+    df_all.append({'case': sheet, 'data source': term, 'years': year_cols, 'values': y_values})
+    color = 'blue' if term == 'Total domestic supply' else 'orange'
+
+    ax.plot(
+        x,
+        y_values,
+        linestyle=linestyle,
+        linewidth=5,
+        color=color,
+        label=new_label
+    )
+    df_all.append({'material': selected_material})
+
+    # Add manual legend handle
+    handle = Line2D([0], [0], color=color, linestyle=linestyle, linewidth=5, label=new_label)
+    legend_handles.append(handle)
+
+# --- X-axis formatting ---
+ax.set_xticks(x)
+ax.set_xticklabels(year_cols, rotation=90)
+ax.set_ylabel(f'{selected_material.capitalize()} (million metric tons)')
+ax.set_xlim(-0.5, len(year_cols)-0.5)
+ax.grid(True)
+ax.legend(handles=legend_handles, loc='upper left', handlelength=6)
+
+# --- RING values for pointer lines ---
+df_ring = df_filtered[df_filtered['Term'] == 'RING projected demand']
+ring_2024_value = df_ring['2024'].values[0] / 1e6
+ring_2035_value = df_ring['2035'].values[0] / 1e6
+x_2024 = np.where(np.array(year_cols) == '2024')[0][0]
+x_2035 = np.where(np.array(year_cols) == '2035')[0][0]
+
+# --- Read tech breakdown ---
+df_tech = pd.read_excel('Grid_RING_inputs_v2.xlsx', sheet_name=ring_breakdown_sheet, skiprows=6)
+df_filtered_tech = df_tech[df_tech['Refined Materials'] == selected_material].copy()
+
+# Combine tech categories
+df_filtered_tech["tech_combined"] = np.select(
+    [df_filtered_tech["Tech"] == "Circuit breakers",
+     df_filtered_tech["Tech"] == "Transmission Lines"],
+    ["Circuit breakers", "Transmission"],
+    default="Generation and Storage"
+)
+
+# --- Define consistent colors for each tech ---
+tech_colors = {
+    'Circuit breakers': '#1f77b4',       # blue
+    'Transmission': '#ff7f0e',           # orange
+    'Generation and Storage': '#2ca02c'  # green
+}
+
+# --- Function to create percent stacked bar inset ---
+def plot_inset_percent(ax_main, df_tech_data, year, inset_pos):
+    # Aggregate and filter
+    df_year = df_tech_data[['tech_combined', year]].groupby('tech_combined', as_index=False).sum()
+    df_year[year] = df_year[year] / 1e6
+    df_year_filtered = df_year[df_year[year] > 1e-10]
+
+    total = df_year_filtered[year].sum()
+    if total == 0:
+        return None  # skip if nothing to plot
+
+    ax_inset = ax_main.inset_axes(inset_pos)
+
+    bottom = 0
+    x_bar = 0
+    for tech, row in df_year_filtered.set_index('tech_combined').iterrows():
+        height = row[year] / total * 100  # percent
+        if height <= 1e-10:
+            continue
+
+        ax_inset.bar(
+            x_bar,
+            height,
+            bottom=bottom,
+            color=tech_colors.get(tech, 'gray')
+        )
+
+        # Label with newline if >2 words
+        words = tech.split()
+        label = '\n'.join(words) if len(words) > 2 else tech
+
+        # Compute y position for label
+        # Original center position
+        y_label = bottom + 0.6 * height
+
+        # Nudge it slightly up or down
+        if tech == 'Circuit breakers':
+            y_label += 8  # move up 2 percent points
+
+        ax_inset.text(
+            x_bar,
+            y_label,
+            label + f" ({height:.1f}%)",
+            ha='center',
+            va='center',
+            fontsize=11,
+            fontweight='bold',
+            color='black'
+        )
+
+        bottom += height
+
+    # Format inset
+    ax_inset.set_yticks([])
+    ax_inset.set_xticks([])
+    ax_inset.spines['left'].set_visible(False)
+
+    return ax_inset
+
+# --- Create 2024 percent inset ---
+ax_inset_2024 = plot_inset_percent(ax, df_filtered_tech, '2024', [0.06, 0.08, 0.25, 0.15])
+ax.plot(x_2024, ring_2024_value, marker='o', color='black', markersize=8)
+con1 = ConnectionPatch(
+    xyA=(1.0, 0.5),
+    coordsA=ax_inset_2024.transAxes,
+    xyB=(x_2024, ring_2024_value),
+    coordsB=ax.transData,
+    color='black',
+    linewidth=2,
+    linestyle='--'
+)
+ax.add_artist(con1)
+
+# --- Create 2035 percent inset ---
+ax_inset_2035 = plot_inset_percent(ax, df_filtered_tech, '2035', [0.70, 0.17, 0.25, 0.15])
+ax.plot(x_2035, ring_2035_value, marker='o', color='black', markersize=8)
+con2 = ConnectionPatch(
+    xyA=(1.0, 0.5),
+    coordsA=ax_inset_2035.transAxes,
+    xyB=(x_2035, ring_2035_value),
+    coordsB=ax.transData,
+    color='black',
+    linewidth=2,
+    linestyle='--'
+)
+ax.add_artist(con2)
+
+plt.show()

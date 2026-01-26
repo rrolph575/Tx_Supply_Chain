@@ -6,7 +6,7 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import ConnectionPatch, Rectangle
 
 # --- Parameters ---
-scenario = 'AC'  # 'AC' or 'MT'
+scenario = 'MT'  # 'AC' or 'MT'
 sheet = scenario+'Grid_2024MidCase'  # main sheet
 selected_material = 'copper' # 'copper' or 'aluminum'
 
@@ -29,7 +29,8 @@ plt.rcParams.update({
 fig, ax = plt.subplots(figsize=(16, 12))
 
 # --- Read main data ---
-df = pd.read_excel('Grid_RING_inputs_v2.xlsx', sheet_name=sheet, skiprows=6)
+#df = pd.read_excel('Grid_RING_inputs_v2.xlsx', sheet_name=sheet, skiprows=6)
+df = pd.read_excel('Grid_RING_inputs_v2_updated_with_MCS2025.xlsx', sheet_name=sheet, skiprows=6)
 df_filtered = df[df['Refined Material'] == selected_material]
 
 # --- Year columns & numeric x positions ---

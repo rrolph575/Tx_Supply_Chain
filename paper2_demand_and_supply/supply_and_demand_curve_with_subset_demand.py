@@ -6,9 +6,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import ConnectionPatch, Rectangle
 
 # --- Parameters ---
-scenario = 'MT'  # 'AC' or 'MT'
+scenario = 'AC'  # 'AC' or 'MT'
 sheet = scenario+'Grid_2024MidCase'  # main sheet
-selected_material = 'copper' # 'copper' or 'aluminum'
+selected_material = 'aluminum' # 'copper' or 'aluminum'
 
 if selected_material == 'copper':
     ring_breakdown_sheet = scenario + 'Grid_2024MidCase_Cu'
@@ -34,12 +34,12 @@ df = pd.read_excel('Grid_RING_inputs_v2_updated_with_MCS2025.xlsx', sheet_name=s
 df_filtered = df[df['Refined Material'] == selected_material]
 
 # --- Year columns & numeric x positions ---
-year_cols = [col for col in df.columns if str(col).isdigit() and int(col) >= 2025]
+year_cols = [col for col in df.columns if str(col).isdigit() and int(col) >= 2026]
 x = np.arange(len(year_cols))  # numeric x positions
 
 # --- Line styles and labels ---
 linestyle_map = {
-    'RING projected demand': '--',
+    'RING projected demand': '-',
     'Total domestic supply': '-',
     'USGS projected demand': ':',
     'DOE CMA project demand': '-.',
@@ -99,13 +99,13 @@ ax.legend(handles=legend_handles_sorted, loc='upper left', handlelength=6)
 
 # --- RING values for pointer lines ---
 df_ring = df_filtered[df_filtered['Term'] == 'RING projected demand']
-ring_2025_value = df_ring['2025'].values[0] / 1e6
+ring_2026_value = df_ring['2026'].values[0] / 1e6
 ring_2035_value = df_ring['2035'].values[0] / 1e6
-x_2025 = np.where(np.array(year_cols) == '2025')[0][0]
+x_2026 = np.where(np.array(year_cols) == '2026')[0][0]
 x_2035 = np.where(np.array(year_cols) == '2035')[0][0]
 
 # --- Read tech breakdown ---
-df_tech = pd.read_excel('Grid_RING_inputs_v2.xlsx', sheet_name=ring_breakdown_sheet, skiprows=6)
+df_tech = pd.read_excel('Grid_RING_inputs_v2_updated_with_MCS2025.xlsx', sheet_name=ring_breakdown_sheet, skiprows=6)
 df_filtered_tech = df_tech[df_tech['Refined Materials'] == selected_material].copy()
 
 # Combine tech categories
@@ -161,7 +161,7 @@ def plot_inset_percent(ax_main, df_tech_data, year, inset_pos):
         ax_inset.text(
             x_bar,
             y_label,
-            label + f" ({height:.1f}%)",
+            label + f" ({round(height)}%)",
             ha='center',
             va='center',
             fontsize=18,
@@ -191,20 +191,20 @@ def add_vertical_rect(ax_main, x_pos, height, width=0.3, color='black', alpha=0.
     ax_main.add_patch(rect)
     return rect
 
-# --- 2025 rectangle and inset connection ---
-rect_2025 = add_vertical_rect(ax, x_2025, ring_2025_value)
+# --- 2026 rectangle and inset connection ---
+rect_2026 = add_vertical_rect(ax, x_2026, ring_2026_value)
 if selected_material == 'aluminum':
-    ax_inset_2025 = plot_inset_percent(ax, df_filtered_tech, '2025', [0.03, 0.1, 0.25, 0.3])
+    ax_inset_2026 = plot_inset_percent(ax, df_filtered_tech, '2026', [0.03, 0.1, 0.25, 0.3])
 if selected_material =='copper':
-    ax_inset_2025 = plot_inset_percent(ax, df_filtered_tech, '2025', [0.05, 0.15, 0.25, 0.15])
+    ax_inset_2026 = plot_inset_percent(ax, df_filtered_tech, '2026', [0.05, 0.15, 0.25, 0.15])
 con1 = ConnectionPatch(
     xyA=(0.5, 0.5),               # center of inset
-    coordsA=ax_inset_2025.transAxes,
-    xyB=(x_2025, ring_2025_value),  # top of rectangle
+    coordsA=ax_inset_2026.transAxes,
+    xyB=(x_2026, ring_2026_value),  # top of rectangle
     coordsB=ax.transData,
     color='black',
     linewidth=2,
-    linestyle='--'
+    linestyle='solid'
 )
 ax.add_artist(con1)
 
@@ -216,7 +216,7 @@ if selected_material=='copper':
     ax_inset_2035 = plot_inset_percent(ax, df_filtered_tech, '2035', [0.70, 0.15, 0.25, 0.15])
 # Make inset bars appear on top
 ax_inset_2035.set_zorder(5)
-ax_inset_2025.set_zorder(5)
+ax_inset_2026.set_zorder(5)
 
 
 con2 = ConnectionPatch(

@@ -5,11 +5,11 @@ from matplotlib.patches import Patch
 from itertools import cycle
 
 
-def read_material_data(material, excel_file='Grid_RING_inputs_v2.xlsx'):
+def read_material_data(material, excel_file='Grid_RING_inputs_v2_updated_with_MCS2025.xlsx'):
     df_mt = pd.read_excel(excel_file, sheet_name=f'MTGrid_2024MidCase_{material}', skiprows=6)
     df_ac = pd.read_excel(excel_file, sheet_name=f'ACGrid_2024MidCase_{material}', skiprows=6)
 
-    years = [str(y) for y in range(2024, 2036)]
+    years = [str(y) for y in range(2026, 2036)]
 
     # Group by 'Tech' and sum across years
     tech_mt = df_mt.groupby('Tech')[years].sum()
@@ -33,14 +33,14 @@ def plot_material_scenarios(material):
     Legend shows technologies by color, scenario by hatched/solid white boxes.
     """
 
-    years = [str(y) for y in range(2024, 2036)]
+    years = [str(y) for y in range(2026, 2036)]
 
     # Read MT and AC data
     tech_mt, tech_ac, all_techs = read_material_data(material)
 
     # Convert to millions of metric tons
-    tech_mt = tech_mt / 1e6
-    tech_ac = tech_ac / 1e6
+    tech_mt = tech_mt / 1e6 
+    tech_ac = tech_ac / 1e6 
     ylabel = f'{material} required \n(Millions of metric tons)'
 
     plt.rcParams.update({
@@ -117,8 +117,8 @@ for i, material in enumerate(materials):
     tech_mt, tech_ac, all_techs = read_material_data(material)
 
     # Sum across years (convert to million metric tons)
-    mt_sum = tech_mt.sum(axis=1) / 1e6
-    ac_sum = tech_ac.sum(axis=1) / 1e6
+    mt_sum = tech_mt.sum(axis=1) / 1e6 / len(tech_mt.keys()) # per year
+    ac_sum = tech_ac.sum(axis=1) / 1e6 / len(tech_mt.keys())
 
     mt_bottom = 0
     ac_bottom = 0
@@ -139,7 +139,7 @@ for i, material in enumerate(materials):
 ax.set_xticks(x)
 ax.set_xticklabels(materials)
 ax.set_xlim(-0.5, len(materials) - 0.5)
-ax.set_ylabel('Total material required \n (Millions of metric tons)')
+ax.set_ylabel('Total material required \n (Millions of metric tons per year)')
 
 # Legends ---
 # --- Tech legend: top left inside plot, 3 columns ---

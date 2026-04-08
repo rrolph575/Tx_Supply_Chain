@@ -9,3 +9,6 @@ Data/
 *.zip
 outputs/
 plots/
+*.pkl
+Ram/*
+*.dotx

@@ -4,9 +4,11 @@ from matplotlib.lines import Line2D
 import numpy as np
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.patches import ConnectionPatch, Rectangle
+from matplotlib.ticker import FuncFormatter
+
 
 # --- Parameters ---
-scenario = 'AC'  # 'AC' or 'MT'
+scenario = 'MT'  # 'AC' or 'MT'
 sheet = scenario+'Grid_2024MidCase'  # main sheet
 selected_material = 'aluminum' # 'copper' or 'aluminum'
 
@@ -17,12 +19,12 @@ else:
 
 # --- Figure setup ---
 plt.rcParams.update({
-    'font.size': 18,
+    'font.size': 20,
     'axes.titlesize': 18,
-    'axes.labelsize': 18,
-    'xtick.labelsize': 18,
-    'ytick.labelsize': 18,
-    'legend.fontsize': 15,
+    'axes.labelsize': 35,
+    'xtick.labelsize': 25,
+    'ytick.labelsize': 25,
+    'legend.fontsize': 25,
     'legend.title_fontsize': 18,
 })
 
@@ -41,27 +43,27 @@ x = np.arange(len(year_cols))  # numeric x positions
 linestyle_map = {
     'RING projected demand': '-',
     'Total domestic supply': '-',
-    'USGS projected demand': ':',
-    'DOE CMA project demand': '-.',
-}
+    'USGS projected demand': ':'
+    }
 label_map = {
     'RING projected demand': 'Electricity sector demand (RING)',
     'Total domestic supply': 'Total domestic supply',
-    'USGS projected demand': 'All sectors demand (USGS)',
-    'DOE CMA project demand': 'All sectors demand (DOE CMA)',
+    'USGS projected demand': 'All sectors demand (USGS)'
 }
 
 legend_handles = []
 df_all = []
 
 # --- Plot main lines ---
+# Remove CMA 
+df_filtered = df_filtered[df_filtered['Term'] != 'DOE CMA project demand']
 for term, row in df_filtered.groupby('Term'):
     linestyle = linestyle_map.get(term, '-')
     new_label = label_map.get(term, term)
     y_values = row[year_cols].values[0] / 1e6
 
     df_all.append({'case': sheet, 'data source': term, 'years': year_cols, 'values': y_values})
-    color = 'blue' if term == 'Total domestic supply' else 'orange'
+    color = 'grey' if term == 'Total domestic supply' else 'orange'
 
     ax.plot(
         x,
@@ -79,23 +81,33 @@ for term, row in df_filtered.groupby('Term'):
 
 # --- X-axis formatting ---
 ax.set_xticks(x)
-ax.tick_params(axis='x', labelsize=25)
-ax.tick_params(axis='y', labelsize=25)
+ax.tick_params(axis='x')
+ax.tick_params(axis='y')
 ax.set_xticklabels(year_cols, rotation=90)
-ax.set_ylabel(f'{selected_material.capitalize()} (million metric tons)', fontsize=25)
+ax.set_ylabel(f'{selected_material.capitalize()} (million metric tons)')
+#ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f'{y:.1f}'))
+
+def smart_formatter(y, pos):
+    yticks = ax.get_yticks()
+    if np.allclose(yticks, np.round(yticks)):
+        return f'{int(y)}'
+    else:
+        return f'{y:.1f}'
+
+ax.yaxis.set_major_formatter(FuncFormatter(smart_formatter))
+
 ax.set_xlim(x[0]-0.2, x[-1]+0.5)
 ax.grid(True)
 
 # Legend in desired order
 desired_order = [
-    'All sectors demand (DOE CMA)',
     'All sectors demand (USGS)',
     'Electricity sector demand (RING)',
     'Total domestic supply'
 ]
 handle_dict = {h.get_label(): h for h in legend_handles}
 legend_handles_sorted = [handle_dict[label] for label in desired_order if label in handle_dict]
-ax.legend(handles=legend_handles_sorted, loc='upper left', handlelength=6)
+ax.legend(handles=legend_handles_sorted, loc='upper left', bbox_to_anchor=(0.05,0.35), handlelength=6)
 
 # --- RING values for pointer lines ---
 df_ring = df_filtered[df_filtered['Term'] == 'RING projected demand']
@@ -115,122 +127,6 @@ df_filtered_tech["tech_combined"] = np.select(
     ["Circuit breakers", "Transmission"],
     default="Generation and Storage"
 )
-
-# --- Define consistent colors for each tech ---
-tech_colors = {
-    'Circuit breakers': '#3a3a3a',        # dark grey
-    'Transmission': '#969696',            # medium grey
-    'Generation and Storage': '#d9d9d9'  # light grey
-}
-
-# --- Function to create percent stacked bar inset ---
-def plot_inset_percent(ax_main, df_tech_data, year, inset_pos):
-    df_year = df_tech_data[['tech_combined', year]].groupby('tech_combined', as_index=False).sum()
-    df_year[year] = df_year[year] / 1e6
-    df_year_filtered = df_year[df_year[year] > 1e-10]
-
-    total = df_year_filtered[year].sum()
-    if total == 0:
-        return None  # skip if nothing to plot
-
-    ax_inset = ax_main.inset_axes(inset_pos)
-
-    bottom = 0
-    x_bar = 0
-    for tech, row in df_year_filtered.set_index('tech_combined').iterrows():
-        height = row[year] / total * 100  # percent
-        if height <= 0.06:
-            continue
-
-        ax_inset.bar(
-            x_bar,
-            height,
-            bottom=bottom,
-            color=tech_colors.get(tech, 'gray')
-        )
-
-        # Label with newline if >2 words
-        words = tech.split()
-        label = '\n'.join(words) if len(words) > 2 else tech
-
-        # Compute y position for label
-        y_label = bottom + 0.6 * height
-        if tech == 'Circuit breakers':
-            y_label += 8  # move up slightly
-
-        ax_inset.text(
-            x_bar,
-            y_label,
-            label + f" ({round(height)}%)",
-            ha='center',
-            va='center',
-            fontsize=18,
-            fontweight='bold',
-            color='black'
-        )
-
-        bottom += height
-
-    # Format inset
-    ax_inset.set_yticks([])
-    ax_inset.set_xticks([])
-    for spine in ax_inset.spines.values():
-        spine.set_visible(False)
-
-    return ax_inset
-
-# --- Function to add vertical rectangle ---
-def add_vertical_rect(ax_main, x_pos, height, width=0.3, color='black', alpha=0.2):
-    rect = Rectangle(
-        (x_pos - width/2, 0),
-        width,
-        height,
-        color=color,
-        alpha=alpha
-    )
-    ax_main.add_patch(rect)
-    return rect
-
-# --- 2026 rectangle and inset connection ---
-rect_2026 = add_vertical_rect(ax, x_2026, ring_2026_value)
-if selected_material == 'aluminum':
-    ax_inset_2026 = plot_inset_percent(ax, df_filtered_tech, '2026', [0.03, 0.1, 0.25, 0.3])
-if selected_material =='copper':
-    ax_inset_2026 = plot_inset_percent(ax, df_filtered_tech, '2026', [0.05, 0.15, 0.25, 0.15])
-con1 = ConnectionPatch(
-    xyA=(0.5, 0.5),               # center of inset
-    coordsA=ax_inset_2026.transAxes,
-    xyB=(x_2026, ring_2026_value),  # top of rectangle
-    coordsB=ax.transData,
-    color='black',
-    linewidth=2,
-    linestyle='solid'
-)
-ax.add_artist(con1)
-
-# --- 2035 rectangle and inset connection ---
-rect_2035 = add_vertical_rect(ax, x_2035, ring_2035_value)
-if selected_material=='aluminum':
-    ax_inset_2035 = plot_inset_percent(ax, df_filtered_tech, '2035', [0.6, 0.1, 0.35, 0.3])
-if selected_material=='copper':
-    ax_inset_2035 = plot_inset_percent(ax, df_filtered_tech, '2035', [0.70, 0.15, 0.25, 0.15])
-# Make inset bars appear on top
-ax_inset_2035.set_zorder(5)
-ax_inset_2026.set_zorder(5)
-
-
-con2 = ConnectionPatch(
-    xyA=(0.5, 0.5),
-    coordsA=ax_inset_2035.transAxes,
-    xyB=(x_2035, ring_2035_value),
-    coordsB=ax.transData,
-    color='black',
-    linewidth=2,
-    linestyle='--'
-)
-ax.add_artist(con2)
-
-
 
 #scenario = 'MT'  # 'AC' or 'MT'
 #sheet = scenario+'Grid_2024MidCase'  # main sheet

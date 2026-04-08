@@ -1,0 +1,8 @@
+component,supply,demand_ac,demand_mt
+transmission_line,73000,5040,6840
+transformer_low_domestic,1135,1500,1370
+transformer_high_domestic,2245,1500,1370
+transformer_imported_low,500,1500,1370
+transformer_imported_high,700,0,0
+circuit_breaker,120000,1390,1230
+tower,0,24980,36270

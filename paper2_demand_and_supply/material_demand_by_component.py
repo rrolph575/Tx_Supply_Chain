@@ -5,7 +5,7 @@ from matplotlib.patches import Patch
 from itertools import cycle
 
 
-def read_material_data(material, excel_file='Grid_RING_inputs_v2_updated_with_MCS2025.xlsx'):
+def read_material_data(material, excel_file='Grid_RING_inputs_v2_updated_with_MCS2025_to_push.xlsx'):
     df_mt = pd.read_excel(excel_file, sheet_name=f'MTGrid_2024MidCase_{material}', skiprows=6)
     df_ac = pd.read_excel(excel_file, sheet_name=f'ACGrid_2024MidCase_{material}', skiprows=6)
 
@@ -14,6 +14,19 @@ def read_material_data(material, excel_file='Grid_RING_inputs_v2_updated_with_MC
     # Group by 'Tech' and sum across years
     tech_mt = df_mt.groupby('Tech')[years].sum()
     tech_ac = df_ac.groupby('Tech')[years].sum()
+
+    # Rename 'Cabling for PV, LBW, OSW' to 'Cabling'
+    if 'Cabling for PV, LBW, OSW' in tech_mt.index:
+        tech_mt = tech_mt.rename(index={'Cabling for PV, LBW, OSW': 'Cabling'})
+        tech_ac = tech_ac.rename(index={'Cabling for PV, LBW, OSW': 'Cabling'})
+    
+    # Combine the OSW and LBW
+    if 'OSW' in tech_mt.index and 'LBW' in tech_mt.index:
+        tech_mt.loc["Wind"] = tech_mt.loc['LBW'] + tech_mt.loc['OSW']
+        tech_ac.loc["Wind"] = tech_ac.loc['LBW'] + tech_ac.loc['OSW']
+        # drop OWS and LBW
+        tech_mt = tech_mt.drop(['LBW', 'OSW'], errors='ignore')
+        tech_ac = tech_ac.drop(['LBW', 'OSW'], errors='ignore') 
 
     # Union of all technologies
     all_techs = tech_mt.index.union(tech_ac.index)
@@ -83,13 +96,12 @@ def plot_material_scenarios(material):
     handles_scenario = [Patch(facecolor='white', edgecolor='black', hatch='', label='MT'),
                         Patch(facecolor='white', edgecolor='black', hatch='//', label='AC')]
     plt.legend(handles=handles_tech + handles_scenario, bbox_to_anchor=(1.05, 1), loc='upper left')
-
     plt.tight_layout()
     plt.show()
 
 
 # Procedure
-materials = ['Al', 'Cu', 'Steel']  # GOES removed
+materials = ['Al', 'Cu', 'Steel' ,'GOES']
 for material in materials:
     plot_material_scenarios(material)
 
@@ -98,12 +110,19 @@ for material in materials:
 width = 0.35  # width of each "half" bar (MT or AC)
 x = np.arange(len(materials))
 
+transmission_techs = ['Transmission Lines', 'Towers', 'Transformers', 'Circuit Breakers']
+
 # Gather all technologies across materials ---
 all_techs_total = set()
 for material in materials:
     _, _, all_techs = read_material_data(material)
     all_techs_total.update(all_techs)
-all_techs_total = sorted(all_techs_total)
+#all_techs_total = sorted(all_techs_total)
+
+# Reorder: priority techs first, then the rest
+all_techs_total = [tech for tech in transmission_techs if tech in all_techs_total] + \
+                  [tech for tech in sorted(all_techs_total) if tech not in transmission_techs]
+
 
 # Assign consistent colors for all technologies ---
 tech_colors = {tech: plt.cm.tab20(i / len(all_techs_total)) for i, tech in enumerate(all_techs_total)}
@@ -127,13 +146,19 @@ for i, material in enumerate(materials):
         mt_value = mt_sum.get(tech, 0)
         ac_value = ac_sum.get(tech, 0)
 
-        # MT solid
-        ax.bar(i - width/2, mt_value, width, bottom=mt_bottom, color=tech_colors[tech])
+        gap = 0.02
+        # Plot AC bar first (left), then MT bar (right)
+        ax.bar(i - width/2 - gap, ac_value, width, bottom=ac_bottom, color=tech_colors[tech])
+        ac_bottom += ac_value
+
+        ax.bar(i + width/2 + gap, mt_value, width, bottom=mt_bottom, color=tech_colors[tech])
         mt_bottom += mt_value
 
-        # AC hatched
-        ax.bar(i + width/2, ac_value, width, bottom=ac_bottom, color=tech_colors[tech], hatch='//')
-        ac_bottom += ac_value
+    # Place 'AC' label under the AC bar
+    ax.text(i - width/2, -0.07, 'AC', ha='center', va='top', fontsize=14, transform=ax.get_xaxis_transform())
+
+    # Place 'MT' label under the MT bar
+    ax.text(i + width/2, -0.07, 'MT', ha='center', va='top', fontsize=14, transform=ax.get_xaxis_transform())
 
 # Formatting ---
 ax.set_xticks(x)
@@ -152,17 +177,27 @@ tech_legend = ax.legend(
     fontsize=12,
     ncol=2  # 3 columns for techs
 )
-ax.add_artist(tech_legend)
-# --- Scenario legend: top right inside plot, 1 column ---
-mt_patch = Patch(facecolor='white', edgecolor='black', label='MT')
-ac_patch = Patch(facecolor='white', edgecolor='black', hatch='//', label='AC')
-ax.legend(
-    handles=[mt_patch, ac_patch],
-    loc='upper right',
-    bbox_to_anchor=(0.99, 1.0),
-    frameon=True,
-    fontsize=12,
-    ncol=1  # single column
-)
-
+plt.savefig('figures/material_per_year_by_scenario_and_tech.png', bbox_inches='tight')
 plt.show()
+
+
+
+## Calculations of relative percents of material for transmsission, other calcs..abs
+material = 'Cu'
+tech_mt, tech_ac, all_techs = read_material_data(material)
+
+# transmission_techs
+for label, tech in [('MT', tech_mt), ('AC', tech_ac)]:
+    total = tech.sum(axis=1)
+    percent = total[total.index.isin(transmission_techs)].sum() / total.sum() * 100
+    print(f'Percent material {material} {label} scenario:  {percent}')
+
+# percent of steel used for towers
+material = 'GOES'
+tech_mt, tech_ac, all_techs = read_material_data(material)
+for label, tech in [('MT', tech_mt), ('AC', tech_ac)]:
+    #print(label)
+    #print(tech)
+    total = tech.sum(axis=1)
+    percent = total[total.index.isin(['Towers'])].sum() / total.sum() * 100
+    print(f'Percent material {material} {label} scenario:  {percent}')

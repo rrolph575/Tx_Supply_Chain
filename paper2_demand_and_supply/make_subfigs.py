@@ -27,3 +27,7 @@ for idx, ax in enumerate(axes.flat):
     # Combined label (bottom-center)
     ax.text(0.5, -0.08, f"{panel_labels[idx]} {labels[idx]}", transform=ax.transAxes,
             fontsize=14, fontweight='bold', va='top', ha='center', color='black')
+
+
+plt.savefig(f"{figpath}supply_demand_combined.png", bbox_inches='tight', dpi=300)
+plt.show()
